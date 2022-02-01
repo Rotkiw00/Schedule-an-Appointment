@@ -1,0 +1,119 @@
+﻿@model Projekt_Przychodnia_TsWM.Models.UserDetailsViewModel
+
+@{ViewBag.Title = "Moja lista wizyt";}
+
+<br>
+<br>
+<h2>Moje dane</h2>
+<hr />
+
+<dl class="dl-horizontal">
+    <dt>@Html.DisplayName("Imię"): </dt>
+    <dd>
+        <p>@Html.DisplayFor(x => x.user.FirstName)</p>
+    </dd>
+
+    <dt>@Html.DisplayName("Nazwisko"): </dt>
+    <dd>
+        <p>@Html.DisplayFor(x => x.user.LastName)</p>
+    </dd>
+
+    <dt>@Html.DisplayName("Data urodzenia"): </dt>
+    <dd>
+        <p>@Html.DisplayFor(x => x.user.BirthDate)</p>
+    </dd>
+
+    <dt>@Html.DisplayName("E-Mail"): </dt>
+    <dd>
+        <p>@Html.DisplayFor(x => x.user.UserName)</p>
+    </dd>
+
+    <dt>@Html.DisplayName("Hasło"): </dt>
+    <dd>
+        <p>@Html.Raw("\u2022\u2022\u2022\u2022\u2022")</p>
+        @if (Model.user.PasswordHash != null)
+        {
+            @Html.ActionLink("Zmień hasło", "ChangePassword", "Manage")
+        }
+    </dd>
+</dl>
+
+<br>
+<h2>
+    @if (User.IsInRole("Admin"))
+    {
+        @Html.ActionLink("Wszystkie wizyty", "Index", "Calendar")
+    }
+    else
+    {
+        @Html.ActionLink("Moje wizyty", "Index", "Calendar")
+    }
+</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayName("Temat")
+        </th>
+        <th>
+            @Html.DisplayName("Opis wizyty")
+        </th>
+        <th>
+            @Html.DisplayName("Data wizyty")
+        </th>
+        <th>
+            @Html.DisplayName("Czas trwania (min)")
+        </th>
+        @if (User.IsInRole("Admin"))
+        {
+            <th>
+                @Html.DisplayName("Nazwa pacjenta")
+            </th>
+        }
+    </tr>
+
+    @foreach (var item in Model.events)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Subject)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Start)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateDiff)
+            </td>
+            @if (User.IsInRole("Admin"))
+            {
+                <td>
+                    @Html.DisplayFor(modelItem => item.PatientName)
+                </td>
+            }
+        </tr>
+    }
+</table>
+
+<style>
+    th {
+        background-color: #fcaa70;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background-color: #d0cfcf;
+        color: black;
+    }
+
+    tr:nth-child(odd) {
+        background-color: white;
+        color: black;
+    }
+
+    tr:hover {
+        background-color: yellow;
+    }
+</style>

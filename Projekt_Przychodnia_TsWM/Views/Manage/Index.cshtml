@@ -1,0 +1,28 @@
+﻿@model Projekt_Przychodnia_TsWM.Models.IndexViewModel
+@{
+    ViewBag.Title = "Edytuj profil";
+}
+
+<br>
+<br>
+<h2>@ViewBag.Title</h2>
+
+<p class="text-success">@ViewBag.StatusMessage</p>
+<div>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>Ustawienia hasła:</dt>
+        <dd>
+            [
+            @if (Model.HasPassword)
+            {
+                @Html.ActionLink("Zmień hasło", "ChangePassword")
+            }
+            else
+            {
+                @Html.ActionLink("Ustaw hasło", "SetPassword")
+            }
+            ]
+        </dd>
+    </dl>
+</div>

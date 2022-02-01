@@ -1,0 +1,272 @@
+﻿<br>
+<br>
+<h2 style="text-align:center">Rezerwuj wizyty!</h2>
+<br>
+<ul style="text-align:left">
+    <li><h4>W widoku kalendarza (poniżej) istnieje możliwość dodania wydarzenia tj. wizyty poprzez kliknięcie w wybrany dzień i wprowadzenie danych spotkania.</h4></li>
+    <li><h4>Dodawanie wizyt jest możliwe tylko wtedy, kiedy użytkownik jest zalogowany na swoim koncie. Jeśli użytkownik nie posiada konta, to musi go @Html.ActionLink("utworzyć", "Register", "Account").</h4></li>
+    <li><h4>Dodane wizyty użytkownika trafiają do Panelu użytkownika. Z poziomu kalendarza możliwa jest również edycja oraz usuwanie dodanych wizyt.</h4></li>
+</ul>
+<br>
+<div class="p-4 shadow-4 rounded-3" style="background-color: hsl(0 0% 79%);">
+    <div id="calender"></div>
+</div>
+
+<div id="myModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><span id="eventTitle"></span></h4>
+            </div>
+            <div class="modal-body">
+                <button id="btnDelete" class="btn btn-default btn-sm pull-right">
+                    <span class="glyphicon glyphicon-remove"></span> Usuń wydarzenie
+                </button>
+                <button id="btnEdit" class="btn btn-default btn-sm pull-right" style="margin-right:5px;">
+                    <span class="glyphicon glyphicon-pencil"></span> Edytuj wydarzenie
+                </button>
+                <p id="pDetails"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Zamknij</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="myModalSave" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Zarezerwuj wydarzenie</h4>
+            </div>
+            <div class="modal-body">
+                <form class="col-md-12 form-horizontal">
+                    <input type="hidden" id="hdEventID" value="0" />
+                    <div class="form-group">
+                        <label>Cel wizyty</label>
+                        <input type="text" id="txtSubject" list="aimsAppointment" class="form-control" />
+                        <datalist id="aimsAppointment">
+                            <option>Ból brzucha</option>
+                            <option>Ból głowy</option>
+                            <option>Kaszel, katar, ogólne rozbicie</option>
+                            <option>Gorączka</option>
+                            <option>Wysypka</option>
+                            <option>Biegunka lub wymioty</option>
+                            <option>Niechęć w przyjmowaniu płynów</option>
+                            <option>Senność</option>
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>Start</label>
+                        <div class="input-group date" id="dtp1">
+                            <input type="text" id="txtStart" class="form-control" />
+                            <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Opis wizyty</label>
+                        <textarea id="txtDescription" rows="3" class="form-control"></textarea>
+                    </div>
+                    <button type="button" id="btnSave" class="btn btn-success">Zapisz</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Zamknij</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.css" rel="stylesheet" />
+<link href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.print.css" rel="stylesheet" media="print" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css" rel="stylesheet" />
+@section Scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var events = [];
+            var selectedEvent = null;
+            FetchEventAndRenderCalendar();
+            function FetchEventAndRenderCalendar() {
+                events = [];
+                $.ajax({
+                    type: "GET",
+                    url: "/Calendar/GetEvents",
+                    success: function (data) {
+                        $.each(data, function (i, v) {
+                            events.push({
+                                eventID: v.EventID,
+                                title: v.Subject,
+                                description: v.Description,
+                                start: moment(v.Start),
+                                end: v.End != null ? moment(v.End) : null,
+                                color: v.ThemeColor,
+                                allDay: v.IsFullDay
+                            });
+                        })
+
+                        GenerateCalender(events);
+                    },
+                    error: function (error) {
+                        alert('Nie udało się pobrać wydarzeń.');
+                    }
+                })
+            }
+
+            function GenerateCalender(events) {
+                $('#calender').fullCalendar('destroy');
+                $('#calender').fullCalendar({
+                    contentHeight: 400,
+                    defaultDate: new Date(),
+                    timeFormat: 'h(:mm)a',
+                    header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'month,basicWeek'
+                    },
+                    eventLimit: true,
+                    eventColor: '#378006',
+                    events: events,
+                    eventClick: function (calEvent, jsEvent, view) {
+                        selectedEvent = calEvent;
+                        $('#myModal #eventTitle').text(calEvent.title);
+                        var $description = $('<div/>');
+                        $description.append($('<p/>').html('<b>Początek wizyty: </b>' + calEvent.start.format("DD-MMM-YYYY HH:mm a")));
+                        if (calEvent.end != null) {
+                            $description.append($('<p/>').html('<b>Koniec wizyty: </b>' + calEvent.end.format("DD-MMM-YYYY HH:mm a")));
+                        }
+                        $description.append($('<p/>').html('<b>Opis wizyty: </b>' + calEvent.description));
+                        $('#myModal #pDetails').empty().html($description);
+
+                        $('#myModal').modal();
+                    },
+                    selectable: true,
+                    select: function (start, end) {
+                        selectedEvent = {
+                            eventID: 0,
+                            title: '',
+                            description: '',
+                            start: start,
+                            end: end,
+                            allDay: false,
+                            color: ''
+                        };
+                        var userAuthorized = @User.Identity.IsAuthenticated.ToString().ToLower();
+                        var isAdmin = @User.IsInRole("Admin").ToString().ToLower();
+                        if (userAuthorized && !isAdmin) {
+                            openAddEditForm();
+                        }
+                        $('#calendar').fullCalendar('unselect');
+                    },
+                    editable: true,
+                    eventDrop: function (event) {
+                        var data = {
+                            EventID: event.eventID,
+                            Subject: event.title,
+                            Start: event.start.format('DD/MM/YYYY HH:mm A'),
+                            End: event.end != null ? event.end.format('DD/MM/YYYY HH:mm A') : null,
+                            Description: event.description,
+                            ThemeColor: event.color,
+                            IsFullDay: event.allDay
+                        };
+                        SaveEvent(data);
+                    }
+                })
+            }
+
+            $('#btnEdit').click(function () {
+                //Open modal dialog for edit event
+                openAddEditForm();
+            })
+            $('#btnDelete').click(function () {
+                if (selectedEvent != null && confirm('Czy jesteś pewien, że chcesz usunąć to wydarzenie?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: '/Calendar/DeleteEvent',
+                        data: { 'eventID': selectedEvent.eventID },
+                        success: function (data) {
+                            if (data.status) {
+                                //Refresh the calender
+                                FetchEventAndRenderCalendar();
+                                $('#myModal').modal('hide');
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            //alert("some error");
+                            alert('Nie udało się usunąć wydarzenia.');
+                            console.log(textStatus);
+                            console.log(errorThrown);
+                        }
+                    })
+                }
+            })
+
+            $('#dtp1,#dtp2').datetimepicker({
+                format: 'DD/MM/YYYY HH:mm A'
+            });
+
+            function openAddEditForm() {
+                if (selectedEvent != null) {
+                    $('#hdEventID').val(selectedEvent.eventID);
+                    $('#txtSubject').val(selectedEvent.title);
+                    $('#txtStart').val(selectedEvent.start.format('DD/MM/YYYY HH:mm A'));
+                    $('#txtDescription').val(selectedEvent.description);
+                    $('#ddThemeColor').val(selectedEvent.color);
+                }
+                $('#myModal').modal('hide');
+                $('#myModalSave').modal();
+            }
+
+            $('#btnSave').click(function () {
+                //Validation/
+                if ($('#txtSubject').val().trim() == "") {
+                    alert('Cel wizyty jest wymagany.');
+                    return;
+                }
+                if ($('#txtStart').val().trim() == "") {
+                    alert('Proszę ustawić datę rozpoczęcia wizyty.');
+                    return;
+                }
+
+                var data = {
+                    EventID: $('#hdEventID').val(),
+                    Subject: $('#txtSubject').val().trim(),
+                    Start: $('#txtStart').val().trim(),
+                    Description: $('#txtDescription').val(),
+                    ThemeColor: $('#ddThemeColor').val()
+                }
+                SaveEvent(data);
+                // call function for submit data to the server
+            })
+
+            function SaveEvent(data) {
+                $.ajax({
+                    type: "POST",
+                    url: '/Calendar/SaveOrUpdateEvent',
+                    data: data,
+                    success: function (data) {
+                        if (data.status) {
+                            //Refresh the calender
+                            FetchEventAndRenderCalendar();
+
+                            if (data.message) {
+                                alert(data.message);
+                            }
+                            else {
+                                $('#myModalSave').modal('hide');
+                            }
+                        }
+                    },
+                    error: function () {
+                        alert('Nie udało się zapisać wydarzenia.');
+                    }
+                })
+            }
+        })
+    </script>
+}
